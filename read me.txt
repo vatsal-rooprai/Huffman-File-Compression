@@ -1,4 +1,4 @@
-“There are essentially 2 sections in Huffman's Coding. They are: 
+There are essentially 2 sections in Huffman's Coding. They are: 
 (i.) Character would be taken as input and from them prepare Huffman tree 
 (ii.) Visiting the tree generated in previous step to this step, and in the process giving out  variable lengthed binary codes to all the nodes.
 
@@ -16,4 +16,4 @@ Traverse or cross the tree framed beginning from the root. Keep up a helper arra
 
 III Driver Process: 
 Subsequent to making the huffman's tree and doling out the variable length codes(binary) to every one of the letter sets alongside space, in view of their frequencies in English language(data accessible on the Internet), we simply need to peruse the first content record or in simple language a 'file', letter by letter and to yield the particular parallel code. 
-In the event that we need to decompress the document, then again, we simply need to peruse that record a little bit at a time and move along the Huffman tree until the point when we discover a letter, and soon thereafter we move back to the foundation of the tree and further keep preparing the bits of that record which we need to decompress.”
+In the event that we need to decompress the document, then again, we simply need to peruse that record a little bit at a time and move along the Huffman tree until the point when we discover a letter, and soon thereafter we move back to the foundation of the tree and further keep preparing the bits of that record which we need to decompress.
