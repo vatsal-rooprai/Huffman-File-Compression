@@ -1,0 +1,237 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <math.h>
+#define len(x) ((int)log10(x)+1)
+
+/* The following is the strucutre for the node of the huffman tree */
+struct node{
+    int value;
+    char letter;
+    struct node *left,*right;
+};
+
+typedef struct node Node;
+
+/* The following array contains the frequencies of the english letter alphabets, along with that of the space character as the last element
+The frequency values are multiplied by 10 to facilitate quick arithmetic operations.
+*/
+int frequencies [27] = {81, 15, 28, 43, 128, 23, 20, 61, 71, 2, 1, 40, 24, 69, 76, 20, 1, 61, 64, 91, 28, 10, 24, 1, 20, 1, 130};
+
+
+/*builds the huffman tree and returns its address by reference*/
+void buildHuffmanTree(Node **tree){
+    Node *temp;
+    Node *array[27];                           //26 letters + 1 space = 27
+    int i, subTrees = 27;
+    int smallest,smallest_2;                   //make 2 nodes for picking smallest and second smallest
+
+	/*Below block is used to create/initialize nodes for all the letters.*/
+	
+    for (i=0;i<27;i++){
+        array[i] = malloc(sizeof(Node));
+        array[i]->value = frequencies[i];
+        array[i]->letter = i;
+        array[i]->left = NULL;
+        array[i]->right = NULL;
+    }
+
+    while (subTrees>1){
+        smallest=find_Small(array,-1);               //finds smallest node 
+        smallest_2=find_Small(array,smallest);       //finds second smallest node
+        temp = array[smallest];
+        array[smallest] = malloc(sizeof(Node));
+        array[smallest]->value=temp->value+array[smallest_2]->value;  //adds a new internal node with frequency equal to the sum of 
+		//smallone and smalltwo i.e. 2 smallest ones frequency 
+        array[smallest]->letter=127;
+        array[smallest]->left=array[smallest_2];    //left child
+        array[smallest]->right=temp;                //right child
+        array[smallest_2]->value=-1;                //so that we don't use it again
+        subTrees--;                                 //used to ensure that we connect all the nodes or all the letters and the space in the tree.
+    }
+
+    *tree = array[smallest];
+
+return;
+}
+
+
+/*finds and returns the small sub-tree in the forrest*/
+int find_Small (Node *array[], int diff){
+    int smaller;
+    int i = 0;
+
+    while (array[i]->value==-1)
+        i++;
+    smaller=i;
+    if (i==diff){
+        i++;
+        while (array[i]->value==-1)
+            i++;
+        smaller=i;
+    }
+    
+    /*The above block iterates through array values and just skips them if they are -1, i.e. already used. Once we get a non -1 value we assign to the small
+    variable. 
+    
+    In the if block, we check whether that value is already used for the smmallest node(diff variable), if yes then again we repeat the above process.
+    If block will come into picture when we are choosing second smallest node.
+    Here, we just see valid values, not the smallest valid values.
+    For that we use below block.
+    */
+
+	/*The below block ensures that the value which we select is the smallest one of the valid values which we can select.
+	*/
+    for (i=1;i<27;i++){
+        if (array[i]->value==-1)
+            continue;
+        if (i==diff)
+            continue;
+        if (array[i]->value<array[smaller]->value)
+            smaller = i;
+    }
+
+    return smaller;
+}
+
+/*
+The below function is used to assign binary sequences to the letters, based on their positions in the above generated tree.
+For going towards left child, write a 0 (denoted by 1 here, for arithmetic putposes), and while going towards right child, 
+write a 1 (denoted by 2 here, also for arithmetic purposes).Start with a 0
+*/
+void table(int codeTable[], Node *tree, int Code){
+    if (tree->letter<27)
+        codeTable[(int)tree->letter] = Code;                   //for assigning the 1 or 2 for the first time, i.e. if the letter is 
+		                                                       //some alphabet letter then give the codeword for the first time.
+    else{
+        table(codeTable, tree->left, Code*10+1);               //01 will change to 011 for left child
+        table(codeTable, tree->right, Code*10+2);              //01 will change to 012 for right child
+    }
+    return;
+}
+
+/*function to compress the input*/
+void compressFile(FILE *input, FILE *output, int codeTable[]){
+    char bit, c, x = 0;
+    int n,length,b_left = 8;
+    int b_original = 0, b_compressed = 0;
+
+    while ((c=fgetc(input))!=EOF){          //read complete file
+        b_original++;                       //increment number of original bits
+        if (c==32){                         //if we encounter any space, then _ _ _ (32 is ASCII for a space)
+            length = len(codeTable[26]);    //it will have number of bits in binary sequence of space
+            n = codeTable[26];              //n will get huffman binary sequence for 'space' from the codetable, generated by huffman tree
+        }                                   //doing seperately for space, as it's ASCII value is seperately written than those of the small case alphabets.
+        else{
+            length=len(codeTable[c-97]);    //if not space, then assign the length and n variables, their values similar as above. ASCII of a is 97,
+            n = codeTable[c-97];            //considering we only have caps off letters only,i.e. only small alphabets.
+        }
+
+        while (length>0){
+            b_compressed++;
+            bit = n % 10 - 1;             	//select last bit by modulo div, and -1 as we represent 0 by 1 and 1 by 2
+            n /= 10;                        //remove the moduloed bit from sequence
+            x = x | bit;                    //bitwise or. x is the output bit.
+            b_left--;                       //one bit has been removed
+            length--;                       //reduce length of bit sequence
+            if (b_left==0){                 //give the output bit sequence i.e. x, if no bits left. 
+                fputc(x,output);            //Then again make x as 0, and bitsleft 0s 8(max), for next character.
+                x = 0;
+                b_left = 8;                 //each ASCII requires 8 bit to repersent them
+            }
+            x = x << 1;                     //shift left to make space for others in 8bits
+        }
+    }
+
+    if (b_left!=8){                         //if less than 8 required then output like this
+        x = x << (b_left-1);
+        fputc(x,output);
+    }
+
+    /*print details of compression on the screen*/
+    fprintf(stderr,"\nOriginal bits = %d\n",b_original*8);
+    fprintf(stderr,"Compressed bits = %d\n",b_compressed);
+    fprintf(stderr,"Saved %.2f%% of memory\n",((float)b_compressed/(b_original*8))*100);
+
+    return;
+}
+
+/*function to decompress the input*/
+void decompressFile (FILE *input, FILE *output, Node *tree){
+    Node *current = tree;
+    char c,bit;
+    char m = 1 << 7;                                      //to create 8 bit positions in total. This shifts left binary of 1 by 7 positions.
+    int i;
+
+    while ((c=fgetc(input))!=EOF){                        //read till end of coded file. Do the following things for each individual character.
+        for (i=0;i<8;i++){                                //each ascii requires 8 bit representation
+            bit = c & m;                                  //tells which bit we have to process among 8
+            c = c << 1;
+            if (bit==0){
+                current = current->left;                  //if 0 then go left in tree
+                if (current->letter!=127){                //?valid ascii. 127 is last number in ascii and DEL.
+                    if (current->letter==26)              //frequency[26] stands for space.
+                        fputc(32, output);                //put space in output stream
+                    else
+                        fputc(current->letter+97,output); //any other character in ascii,then print the corresponding letter whose ascci is 97+given. 97 is of a.
+                    current = tree;
+                }
+            }
+            else{                                         //traverse right in huffman tree, and other things are same as in above block.
+                current = current->right;
+                if (current->letter!=127){
+                    if (current->letter==26)
+                        fputc(32, output);
+                    else
+                        fputc(current->letter+97,output);
+                    current = tree;
+                }
+            }
+        }
+    }
+    return;
+}
+
+/*invert the codes in codeTable2*/
+void invertCodes(int codeTable[],int codeTable2[]){
+    int i, n, copy;
+    for (i=0;i<27;i++){
+        n = codeTable[i];
+        copy = 0;
+        while (n>0){
+            copy = copy * 10 + n %10;                    //e.g. changes 102 to 201
+            n /= 10;
+        }
+        codeTable2[i]=copy;
+    }
+return;
+}
+
+
+
+
+
+/*The following block is the code for Main Driver Function*/
+
+int main(){
+    Node *tree;
+    int codeTable[27], codeTable2[27];
+    int option;
+    char file[20];
+    FILE *input, *output;
+    buildHuffmanTree(&tree);
+    table(codeTable, tree, 0);
+    invertCodes(codeTable,codeTable2);
+    printf("Type the file name, you want to process, followed by .txt extension:\n");
+    scanf("%s",file);
+    printf("\nType your option, whether you want to compress or decompress the above specified file. (1-Compress; 2-Decompress):\n");
+    scanf("%d",&option);
+    input = fopen(file, "r");
+    output = fopen("output.txt","w");
+    if (option==1)
+        compressFile(input,output,codeTable2);
+    else
+        decompressFile(input,output, tree);
+    printf("\n\nThank you for using VATSAL\'s File Compression System.\n\n");
+    getch();
+    return 0;
+}

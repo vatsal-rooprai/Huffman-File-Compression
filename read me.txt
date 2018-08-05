@@ -1,0 +1,19 @@
+“There are essentially 2 sections in Huffman's Coding. They are: 
+(i.) Character would be taken as input and from them prepare Huffman tree 
+(ii.) Visiting the tree generated in previous step to this step, and in the process giving out  variable lengthed binary codes to all the nodes.
+
+I Steps to construct Huffman Tree: 
+
+Array of one of a kind characters alongside their recurrence frequencies is the input and the yield which would be obtained as an output would be the ever important Huffman Tree. 
+1. Make a leaf hub for every one of a kind character and assemble a min heap of all leaf hubs (Min Heap is utilized as a priority queue. The estimation of recurrence field is utilized to think about two hubs 
+in min pile. At first, the slightest incessant character is at root) 
+2. Take out two hubs or nodes with the minimum recurrence from the min heap. 
+3. Make another interior hub/node with recurrence equivalent to the addition of the two hubs frequencies. Make the primary separated hub as its left child and the other extricated hub as its right child. Add this to original graph. 
+4. Redo steps 2 and 3 until the point that only a solitary node is remaining. 
+
+II Steps to print codes from Huffman Tree: 
+Traverse or cross the tree framed beginning from the root. Keep up a helper array. While moving to left child, compose 0 to the cluster. While moving to the right child, compose 1 to the exhibit. Array is printed whenever a leaf node is experienced
+
+III Driver Process: 
+Subsequent to making the huffman's tree and doling out the variable length codes(binary) to every one of the letter sets alongside space, in view of their frequencies in English language(data accessible on the Internet), we simply need to peruse the first content record or in simple language a 'file', letter by letter and to yield the particular parallel code. 
+In the event that we need to decompress the document, then again, we simply need to peruse that record a little bit at a time and move along the Huffman tree until the point when we discover a letter, and soon thereafter we move back to the foundation of the tree and further keep preparing the bits of that record which we need to decompress.”
